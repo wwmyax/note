@@ -1,0 +1,104 @@
+代码分析
+全局执行上下文：
+代码从上到下执行，首先执行 console.log('eventLoop')，输出：
+
+
+eventLoop
+调用 async1()：
+执行 async1() 函数，输出：
+
+
+async1 start
+然后遇到 await async2()，此时 async2() 被调用。
+调用 async2()：
+在 async2() 中，执行 console.log('async2')，输出：
+
+
+async2
+async2() 执行完毕，返回 undefined，继续执行 async1()。
+继续执行 async1()：
+由于 await 后面的代码在 async2() 执行完成后继续执行，接下来执行 console.log('async1 end')，但由于 await 的存在，async1 还未结束。
+执行 setTimeout：
+setTimeout 的回调函数被放入宏任务队列，等待当前执行栈清空后执行。
+在当前执行栈中，继续执行后面的代码。
+Promise 2 和 Promise 4：
+创建第一个 Promise，执行 console.log('promise 2')，输出：
+
+
+promise 2
+该 Promise 立即被解析，并将 .then 回调放入微任务队列。
+创建第二个 Promise，执行 console.log('promise 4')，输出：
+
+
+promise 4
+该 Promise 立即被解析，并将 .then 回调放入微任务队列。
+输出 eventLoop end：
+执行 console.log('eventLoop end')，输出：
+
+
+eventLoop end
+执行微任务：
+当前执行栈清空后，执行微任务队列中的回调。
+首先执行 promise 2 的 .then 回调，输出：
+
+
+promise2 then
+然后执行 promise 4 的 .then 回调，输出：
+
+
+promise4 then
+执行宏任务：
+现在执行 setTimeout 的回调，输出：
+
+
+setTimeout 1
+在 setTimeout 的回调中，创建一个新的 Promise，输出：
+
+
+promise 1
+这个 Promise 被立即解析，并将 .then 回调放入微任务队列。
+执行微任务：
+继续执行微任务队列，输出：
+
+
+promise then
+最终输出结果
+根据上述分析，最终输出结果为：
+
+
+
+eventLoop
+async1 start
+async2
+promise 2
+promise 4
+eventLoop end
+promise2 then
+promise4 then
+setTimeout 1
+promise 1
+promise then
+如果将 async1() 改为 await async1()
+如果将 async1() 改为 await async1()，代码执行的上下文将会改变。具体来说：
+
+使用 await 会使得当前执行栈暂停，直到 async1() 完成。
+这意味着在执行 await async1() 的时候，后续的代码（例如创建 Promise 和 setTimeout）将不会执行，直到 async1() 完成。
+在这种情况下，输出结果将会是：
+
+
+
+eventLoop
+async1 start
+async2
+async1 end
+promise 2
+promise 4
+eventLoop end
+promise2 then
+promise4 then
+setTimeout 1
+promise 1
+promise then
+结论
+原始代码：由于 async1() 是异步调用，后续代码会继续执行，导致 setTimeout 和 Promise 的输出在 async1 的完成之前。
+使用 await：将 async1() 改为 await async1() 会使得调用栈暂停，直到 async1() 完成，后续代码才会执行，改变了输出的顺序。
